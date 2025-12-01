@@ -2,69 +2,23 @@ import requests
 import random
 import time
 from datetime import datetime
+from config import SERVICE_TOKENS, SERVICE_MESSAGES
 
 # CONFIGURACIÓN
 API_URL = "http://127.0.0.1:8000/logs"
-
-# Mapeo de servicios a sus tokens (debe coincidir con main.py)
-SERVICE_TOKENS = {
-    "pagos": "tok_pagos_prod_a1b2c3d4e5f6",
-    "ventas": "tok_ventas_prod_g7h8i9j0k1l2",
-    "auth": "tok_auth_prod_m3n4o5p6q7r8",
-    "notificaciones": "tok_notif_prod_s9t0u1v2w3x4",
-    "inventario": "tok_invent_prod_y5z6a7b8c9d0",
-}
-
-SEVERITIES = ["INFO", "WARNING", "ERROR", "CRITICAL", "DEBUG"]
-
-# Mensajes específicos por servicio para mayor realismo
-SERVICE_MESSAGES = {
-    "pagos": [
-        "Pago procesado exitosamente - Monto: $2500",
-        "Error al procesar tarjeta de crédito - Fondos insuficientes",
-        "Timeout con gateway de pago - Stripe",
-        "Reembolso iniciado para pedido #12345",
-        "Pago rechazado - Tarjeta vencida"
-    ],
-    "ventas": [
-        "Nueva venta registrada - Producto: Laptop HP",
-        "Descuento aplicado: Black Friday 20%",
-        "Stock bajo detectado en producto ID 456",
-        "Carrito abandonado después de 30 minutos",
-        "Venta cancelada por el cliente"
-    ],
-    "auth": [
-        "Usuario logueado exitosamente - ID: user_789",
-        "Intento de login fallido - Contraseña incorrecta",
-        "Token JWT renovado para sesión activa",
-        "Logout realizado - Sesión cerrada",
-        "Intento sospechoso de acceso bloqueado - IP: 192.168.1.100"
-    ],
-    "notificaciones": [
-        "Email enviado correctamente - Confirmación de orden",
-        "SMS fallido - Número inválido",
-        "Push notification enviada - 1500 usuarios",
-        "Email rebotado - Buzón lleno",
-        "Webhook recibido de sistema externo"
-    ],
-    "inventario": [
-        "Stock actualizado - Producto: Mouse Logitech (+50 unidades)",
-        "Alerta: Stock crítico en producto ID 321",
-        "Transferencia entre almacenes completada",
-        "Producto marcado como discontinuado",
-        "Orden de reabastecimiento creada"
-    ]
-}
 
 def generate_log():
     """Crea un diccionario con datos aleatorios para el log."""
     # Elegir un servicio al azar
     service = random.choice(list(SERVICE_TOKENS.keys()))
     
+    # Elegir un mensaje con su severidad apropiada
+    severity, message = random.choice(SERVICE_MESSAGES[service])
+    
     return {
         "service": service,
-        "severity": random.choice(SEVERITIES),
-        "message": random.choice(SERVICE_MESSAGES[service]),
+        "severity": severity,
+        "message": message,
         "timestamp": datetime.now().isoformat()
     }, service
 

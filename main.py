@@ -8,20 +8,11 @@ from datetime import datetime
 import models
 import schemas
 import database
+from config import SERVICE_TOKENS
 
 # 1. Crear las tablas en la Base de Datos
-# Esto revisa tu models.py y crea la tabla 'logs' en Postgres automáticamente.
+# Esto revisa models.py y crea la tabla 'logs' en Postgres automáticamente.
 models.Base.metadata.create_all(bind=database.engine)
-
-# Mapeo de servicios a sus tokens únicos
-# En un sistema real, esto estaría en una base de datos o servicio de gestión de secretos
-SERVICE_TOKENS = {
-    "pagos": "tok_pagos_prod_a1b2c3d4e5f6",
-    "ventas": "tok_ventas_prod_g7h8i9j0k1l2",
-    "auth": "tok_auth_prod_m3n4o5p6q7r8",
-    "notificaciones": "tok_notif_prod_s9t0u1v2w3x4",
-    "inventario": "tok_invent_prod_y5z6a7b8c9d0",
-}
 
 # Crear el esquema de seguridad para que aparezca el botón "Authorize" en /docs
 security = HTTPBearer()
