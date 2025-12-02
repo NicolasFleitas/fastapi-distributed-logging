@@ -126,7 +126,7 @@ curl -X GET "http://localhost:8000/logs?severity=ERROR" \
 
 ## 🎯 Simulador de tráfico
 
-El proyecto incluye un simulador que genera logs automáticamente de los 5 servicios:
+El proyecto incluye un simulador que genera logs automáticamente de los 5 servicios, utilizando mensajes y severidades realistas definidos en `config.py`:
 
 ```bash
 python simulator.py
@@ -149,6 +149,7 @@ Esto generará logs continuos con mensajes realistas para cada servicio. Presion
 ```
 05_logging_fast_api/
 ├── main.py              # Aplicación FastAPI principal con endpoints
+├── config.py            # Configuración centralizada (tokens y mensajes)
 ├── models.py            # Modelos SQLAlchemy (tablas de base de datos)
 ├── schemas.py           # Esquemas Pydantic (validación de datos)
 ├── database.py          # Configuración de la base de datos PostgreSQL
