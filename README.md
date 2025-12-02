@@ -14,11 +14,16 @@ cd 05_logging_fast_api
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requeriments.txt
+pip install -r requirements.txt
 ```
 
 ### 3. Configurar PostgreSQL
-Asegúrate de tener PostgreSQL instalado y actualiza `database.py` con tus credenciales.
+1. Asegúrate de tener PostgreSQL instalado.
+2. Crea una base de datos llamada `logging_db` (o el nombre que prefieras):
+   ```sql
+   CREATE DATABASE logging_db;
+   ```
+3. Actualiza el archivo `database.py` con tus credenciales (usuario, contraseña, host y nombre de la base de datos).
 
 ## 🏃 Cómo ejecutar la API
 
