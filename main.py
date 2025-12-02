@@ -1,29 +1,24 @@
-# Depends es una inyección de dependencias, 
-# HTTPException es para manejar errores,
+# Importaciones necesarias para la API, manejo de errores, seguridad y DB.
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session # Session es un objeto que representa una conexión a la base de datos
 from datetime import datetime
-# Importamos nuestros archivos
+# Importaciones locales (modelos de DB, esquemas Pydantic, conexión a DB y tokens de servicio).
 import models
 import schemas
 import database
 from config import SERVICE_TOKENS
 
-# 1. Crear las tablas en la Base de Datos
-# Esto revisa models.py y crea la tabla 'logs' en Postgres automáticamente.
+# Inicialización crucial de la Base de Datos
+# Crea la tabla 'logs' si no existe, basándose en models.py.
 models.Base.metadata.create_all(bind=database.engine)
 
-# Crear el esquema de seguridad para que aparezca el botón "Authorize" en /docs
+# Configuración de seguridad para usar tokens tipo Bearer (activa el botón 'Authorize' en /docs).
 security = HTTPBearer()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict[str, str]:
-    """
-    Esta función verifica si el token es válido.
-    HTTPBearer automáticamente:
-    - Verifica que el header 'Authorization' existe
-    - Valida el formato "Bearer <token>"
-    - Extrae el token y lo pone en credentials.credentials
+    """ 
+        Verifica el token Bearer. HTTPBearer se encarga de extraerlo de la cabecera 'Authorization'. 
     """
     token = credentials.credentials
     
@@ -36,6 +31,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     
     # Validar que el token esté en la lista VIP
     if service_name is None:
+        # Respuesta estándar HTTP 401 si el token no es válido.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido. No tienes acceso a este servicio.",
@@ -47,41 +43,37 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 app = FastAPI(title="Sistema de Logging Distribuido")
 
-# 2. Inyección de Dependencias (La magia de FastAPI)
-# Esta función se encarga de abrir una conexión a la BD, entregártela para que la uses,
-# y cerrarla automáticamente cuando termines, pase lo que pase (incluso si hay error).
+# Dependencia para gestionar la conexión a la DB.
 def get_db():
-    """
-    Esta función se encarga de abrir una conexión a la BD, entregártela para que la uses,
-    y cerrarla automáticamente cuando termines, pase lo que pase (incluso si hay error).
+    """ 
+    Abre y cierra automáticamente la sesión de la DB (conexión), asegurando la limpieza. 
     """
     db = database.SessionLocal()
     try:
-        yield db # yield es como un return, pero permite pausar la función hasta que se llame de nuevo
+        yield db # 'yield' mantiene la conexión abierta hasta que el endpoint termina.
     finally:
         db.close()
 
-# 3. Endpoint para crear logs
-# response_model=schemas.LogResponse asegura que devolvemos los datos limpios (con ID y received_at)
+# Endpoint para crear logs
 @app.post("/logs", response_model=schemas.LogResponse, status_code=status.HTTP_201_CREATED)
 def create_log(log: schemas.LogCreate,
                db: Session = Depends(get_db),
                auth_data: dict = Depends(verify_token)):
     """
-    Recibe un log, lo valida y lo guarda en la base de datos.
+    Recibe un log (Pydantic), verifica la autenticación y lo guarda en la base de datos.
     """
-    # -Convertir el esquema Pydantic a Modelo SQLAlchemy
-    # **log.model_dump() convierte el objeto en un diccionario y lo desempaqueta
-    new_log = models.LogEntry(**log.model_dump()) # **log.model_dump() convierte el objeto en un diccionario y lo desempaqueta
+    # Convertir el esquema Pydantic a Modelo SQLAlchemy
+    # **log.model_dump() convierte Pydantic a diccionario para crear el modelo SQLAlchemy.
+    new_log = models.LogEntry(**log.model_dump())
     
-    # -- Agregar a la sesión y guardar
     db.add(new_log)
     db.commit()
-    db.refresh(new_log) # Recarga el objeto con los datos nuevos (como el ID generado y received_at)
+    # Refresca el objeto para obtener el ID y el timestamp de creación de la DB.
+    db.refresh(new_log) 
     
     return new_log
 
-# 4. Endpoint para obtener logs
+# Endpoint para obtener logs
 @app.get("/logs", response_model=list[schemas.LogResponse])
 def get_logs(
     # Filtros opcionales (Query Parameters)   
@@ -95,29 +87,23 @@ def get_logs(
     auth_data: dict = Depends(verify_token) 
 ):
     """
-    Obtiene una lista de logs con filtros opcionales.
-    Automáticamente filtra por el servicio autenticado con el token.
+    Recupera una lista de logs, aplicando filtros y la política de seguridad.    
+    Política de Seguridad: Solo permite ver logs del servicio asociado al token.
     """
-    query = db.query(models.LogEntry)
+    query = db.query(models.LogEntry)    
     
-    # FILTRO AUTOMÁTICO: Solo mostrar logs del servicio autenticado
-    # El servicio asociado al token actual
-    authenticated_service = auth_data["service"]
-    print(f"✅ Filtrando logs para: {authenticated_service}")
+    authenticated_service = auth_data["service"]    
+
+    # Filtro automático: Restringe la consulta a solo los logs del servicio autenticado.
     query = query.filter(models.LogEntry.service == authenticated_service)
     
-    # Construcción dinámica de queries
-    # Solo se agrega el filtro si el usuario lo envia
-    if service:
-        # Si el usuario envía un filtro de servicio, validamos que coincida con su token
-        if service != authenticated_service:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"No tienes permiso para ver logs de '{service}'. Solo puedes ver logs de '{authenticated_service}'."
-            )
-        # Si coincide, el filtro ya está aplicado arriba
-    
-    # FILTROS OPCIONALES
+    # Validación extra: Si el usuario intenta filtrar por otro servicio, se rechaza.    
+    if service and service != authenticated_service:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"No tienes permiso para ver logs de '{service}'. Solo puedes ver logs de '{authenticated_service}'."
+            )    
+    # Filtros Opcionales (rango de tiempo/severidad)
     if timestamp_start:
         query = query.filter(models.LogEntry.timestamp >= timestamp_start)
     if timestamp_end:        
@@ -129,5 +115,4 @@ def get_logs(
     if severity:
         query = query.filter(models.LogEntry.severity == severity)
     
-    # Ejecutar la consulta y obtener los resultados
     return query.all()

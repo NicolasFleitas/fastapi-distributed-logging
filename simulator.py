@@ -34,25 +34,23 @@ def send_log():
         response = requests.post(API_URL, json=data, headers=headers)
         
         if response.status_code == 201:
-            emoji = "✅" if data['severity'] in ["INFO", "DEBUG"] else "⚠️" if data['severity'] == "WARNING" else "❌"
-            print(f"{emoji} [{data['service'].upper()}] {data['severity']}: {data['message'][:60]}...")
+            print(f"[{data['severity']}] [{data['service'].upper()}]: {data['message'][:60]}...")
         else:
-            print(f"❌ Error {response.status_code}: {response.text}")
+            print(f"[ERROR] Status {response.status_code}: {response.text}")
             
     except Exception as e:
-        print(f"🔥 El servidor no responde: {e}")
+        print(f"[SERVER_ERROR] El servidor no responde: {e}")
 
 if __name__ == "__main__":
-    print("🚀 Iniciando simulación de tráfico distribuido...")
-    print(f"📡 Simulando {len(SERVICE_TOKENS)} servicios diferentes")
+    print("--- Iniciando simulación de tráfico distribuido ---")
+    print(f"Simulando {len(SERVICE_TOKENS)} servicios diferentes")
     print("=" * 80)
     
-    # Bucle infinito para bombardear al servidor
-    # Pulsa Ctrl+C para detenerlo
+    # Bucle infinito para enviar logs
+    # Ctrl+C para detenerlo
     try:
         while True:
             send_log()
-            # Esperamos un poco entre logs para poder leer la consola (0.5 segundos)
             time.sleep(random.uniform(0.1, 0.5))
     except KeyboardInterrupt:
-        print("\n\n👋 Simulación detenida por el usuario")
+        print("\n\n--- Simulación detenida por el usuario ---")
