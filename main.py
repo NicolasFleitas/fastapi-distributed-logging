@@ -115,4 +115,6 @@ def get_logs(
     if severity:
         query = query.filter(models.LogEntry.severity == severity)
     
+    query = query.order_by(models.LogEntry.received_at.desc())
+    
     return query.all()
