@@ -4,7 +4,11 @@
 Write-Host "🚀 Starting FastAPI Logging Service..." -ForegroundColor Green
 
 # Activate virtual environment
-& "$PSScriptRoot\.venv\Scripts\Activate.ps1"
+. "$PSScriptRoot\.venv\Scripts\Activate.ps1"
+
+Write-Host ""
+Write-Host "📦 Checking and installing requirements..." -ForegroundColor Cyan
+pip install -r requirements.txt
 
 # Start the uvicorn server
 Write-Host "📡 Running on http://localhost:8000" -ForegroundColor Cyan

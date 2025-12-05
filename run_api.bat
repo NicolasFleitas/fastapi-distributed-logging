@@ -11,6 +11,10 @@ echo.
 REM Activate virtual environment
 call .venv\Scripts\activate.bat
 
+echo.
+echo 📦 Checking and installing requirements...
+pip install -r requirements.txt
+
 REM Start the uvicorn server
 echo 📡 Running on http://localhost:8000
 echo 📚 API docs available at http://localhost:8000/docs
